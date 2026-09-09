@@ -1,0 +1,22 @@
+Benchmark run: bbH_yt2 vs arXiv:2307.09992 Table 1 (yt^2 row).
+
+  powheg.input   the card that produced RESULT.txt (NLO)
+  pwgseeds.dat   the 8 seeds used (manyseeds mode)
+  RESULT.txt     numbers and comparison
+
+To reproduce:
+  add "manyseeds 1" to powheg.input, then for i=1..8:
+      echo $i | ../pwhg_main
+  and combine the "grand total total" of the 8 logs as a weighted mean.
+  For the LO row add "bornonly 1" and "LOevents 1".
+
+  LHAPDF must find NNPDF31_nlo_as_0118_nf_4 (LHAID 320500).
+  The output_cll/ directory must exist (Recola writes its log there).
+
+Three settings are essential and easy to miss:
+  runningscales 4   HT/4 dynamic scale (eq.3 of the paper)
+  btlscalereal 1    without it POWHEG never sets flg_btildepart='r',
+                    so the real contribution uses the Born HT and the
+                    NLO comes out ~7% too high
+  wilsonlog 1       adds the (1/6)log(muR^2/mt^2) piece of C1 that the
+                    Recola HEFT model file does not supply

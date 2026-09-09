@@ -1,0 +1,104 @@
+bbH_yt2 -- yt^2 component of bb~H production, 4FS, NLO QCD + PS
+===============================================================
+Code built for LHCHWG studies
+======================================
+
+pp -> H b b~ with massive b, restricted to the contribution
+proportional to yt^2: the Higgs couples to gluons through the
+heavy-top effective vertex and the b quarks come from gluon
+splitting. This is the component of arXiv:2307.09992.
+Amplitudes come from Recola2 with the HEFT model file.
+
+Differences from bbH4FS
+---------------------------
+* No bottom Yukawa. The yt^2 contribution has none, so all the
+  running-Yukawa machinery of bbH4FS is gone.
+* Coupling powers: res_powst = 4, res_powew = 1. In the Recola HEFT
+  model the effective Hgg/Hggg/Hgggg vertices carry (QCD,QED) =
+  (2,1)/(3,1)/(4,1), so every Born diagram has (4,1). The yb^2 Born
+  has (2,1) instead - selecting QCD=4 is what projects onto yt^2 and
+  removes both yb^2 and the yb*yt interference.
+* Amplitude provider is recola instead of Openloops/Analytic as in yb^2,
+  the POWHEG-recola interface has been ported from MiNNLO bblnulnu code.
+
+Building
+--------
+1. Get Recola2. The distributed package is a small cmake superbuild
+   that downloads recola2, COLLIER and the requested model file from
+   hepforge at configure time (so the first build needs network):
+
+     wget -O recola2-collier-2.2.4.tar.gz \
+       "https://recola.hepforge.org/downloads/?f=recola2-collier-2.2.4.tar.gz"
+     tar xzf recola2-collier-2.2.4.tar.gz
+
+   (project page: https://recola.hepforge.org)
+
+2. Build it with the HEFT model file. This is essential: the default
+   SM model file has no effective Hgg vertex and the process cannot be
+   generated with it.
+
+     cd recola2-collier-2.2.4
+     mkdir -p build-heft && cd build-heft
+     cmake .. -Dmodel=HEFT -Dstatic=ON \
+              -DCMAKE_INSTALL_PREFIX=<your-prefix>
+     make -j && make install
+
+3. Point the Makefile at it. Edit the two variables in the block
+   marked "SET THESE TWO PATHS" at the top:
+
+     RECOLALOCATION = <your-prefix>
+     RECOLASRC      = <path>/recola2-collier-2.2.4/recola2-2.2.4
+
+   RECOLALOCATION is the install prefix (lib/ + include/).
+   RECOLASRC is the unpacked source tree: its include/ carries the
+   internal modules (globals_rcl) that the install prefix does not
+   ship but that recola.f needs.
+
+   Current values in this Makefile:
+     RECOLALOCATION = $(HOME)/Packages/recola-heft-install
+     RECOLASRC      = $(HOME)/Packages/recola2-collier-2.2.4/recola2-2.2.4
+
+4. LHAPDF and FastJet are found via lhapdf-config / fastjet-config on
+   PATH; if they are not there, set LHAPDF_CONFIG / FASTJET_CONFIG in
+   the Makefile or on the make command line.
+
+5. make        ("make check_recola" alone verifies the Recola paths)
+
+Running
+-------
+See powhegrun-benchmark2307.09992/ for a validated card and the
+comparison with the paper.
+
+alpha_s is frozen in Recola (the HEFT model file has no
+qcd_rescaling, so set_alphas_rcl is refused). The running coupling is
+restored exactly in the interface: muMS/muUV/muIR track muR per phase
+-space point and the amplitudes are rescaled by
+(alphas(muR)/als_frozen)**n, which is exact because they are
+homogeneous in alpha_s at fixed muMS. recola_alphas is therefore an
+arbitrary normalisation.
+
+powheg.input keys specific to this process
+------------------------------------------
+  runningscales 4    HT/4 over all final-state particles (eq.3 of
+                     2307.09992); 0..3 are the bbH4FS choices
+  btlscalereal 1     REQUIRED with runningscales 4: without it POWHEG
+                     leaves flg_btildepart='b' and the real
+                     contribution uses the Born HT (NLO ~7% too high)
+  wilsonlog 1        add the (1/6)log(muR^2/mt^2) term of C1 that the
+                     Recola HEFT model does not supply (default on;
+                     set 0 to compare with Higgs-Characterisation
+                     based numbers)
+  recola_alphas      value alpha_s is frozen to (arbitrary)
+  recola_muren       reference scale for the freeze
+  recola_nfalphas    nf in the alpha_s counterterm dZgs (default
+                     st_nlight = 4)
+  checkvirtpoles 1   validate the virtual: IR poles against the
+                     Casimir prediction, UV finiteness, nf dependence
+
+Validation
+----------
+  Born vs MG5_aMC LO                 0.2%
+  real: soft/collinear limits        -> 1 within 5e-6
+  virtual: IR double poles           gg -6.000, qqbar -8/3, to 2e-6
+  virtual: UV finiteness             independent of DeltaUV
+  full setup vs 2307.09992           LO, NLO agreement

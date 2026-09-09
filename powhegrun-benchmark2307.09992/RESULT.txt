@@ -1,0 +1,16 @@
+bbH_yt2 -- benchmark against arXiv:2307.09992 Table 1 (yt^2)
+
+Setup: pp 13 TeV, NNPDF31_nlo_as_0118_nf_4 (LHAID 320500),
+       muR = muF = HT/4 (event by event), mH=125, mt=172.5, mb=4.92,
+       fully inclusive (no cuts). See powheg.input.
+
+Runs: 8 independent seeds (pwgseeds.dat), ncall1 10000 x2, ncall2 20000 x2.
+LO obtained with the same card plus 'bornonly 1' and 'LOevents 1'.
+
+                  POWHEG [fb]   2307.09992 [fb]    ratio
+LO               285.8 +-  1.8               289    0.989
+NLO              680.9 +-  9.7               689    0.988
+K                2.383                    2.384
+
+chi2/ndf over seeds: LO 0.96, NLO 2.10
+Per-seed NLO [fb]: 712.9 725.0 650.5 658.3 749.5 720.6 715.7 744.6

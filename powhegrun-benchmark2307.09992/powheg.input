@@ -1,0 +1,212 @@
+#------------------------------------------------
+#   INCOMING BEAMS PARAMETER
+#------------------------------------------------
+ih1         1      ! hadron 1 (1 for protons, -1 for antiprotons)
+ih2         1      ! hadron 2 (1 for protons, -1 for antiprotons)
+ebeam1 6500d0      ! energy of beam 1
+ebeam2 6500d0      ! energy of beam 2
+
+
+#------------------------------------------------
+#   PDF & ALPHAS SETTINGS
+#------------------------------------------------
+#   To be set only if using LHA pdfs
+#   NOTE: this is a 4-flavour-scheme calculation -- use an nf=4 PDF set
+#   (e.g. NNPDF31_nlo_as_0118_nf_4), so that alphas also runs with nf=4.
+lhans1 320500      ! NNPDF31_nlo_as_0118_nf_4
+lhans2 320500
+#   To be set only if using different pdf sets for the two incoming hadrons
+#QCDLambda5        0.25         ! for not equal pdf sets
+#   ALPHAS AND PDF EVOLUTION
+alphas_from_lhapdf  1            ! (default 0) if 1, uses alphas from PDF evolution tool (e.g. lhapdf or hoppet)
+#   PDF THRESHOLDS
+#charmthrpdf        1.2750000d0
+#bottomthrpdf       4.1799998d0
+ewscheme	    1
+
+#------------------------------------------------
+#   RENORMALIZATION/FACTORIZATION SCALE SETTINGS
+#------------------------------------------------
+# IMPLEMENT SCALES
+#fixedscale 0	   ! 1 = fixed -> muren = mufac = mZ
+#dynamicalscale 2   ! 1 = XXX, 2 = XXX
+runningscales 4    ! HT/4, eq.(3) of 2307.09992
+#                  ! All scale settings is taken care of internally)
+
+#------------------------------------------------
+#   PROCESS PARAMETERS
+#------------------------------------------------
+hwidth 0.0d0
+hmass 125.0d0
+bmass 4.92d0       ! 4FS: massive bottom quark (used in the matrix elements)
+b_mass 4.92d0      ! bottom mass used for momentum reshuffling in the LHE
+
+#------------------------------------------------
+#   HEFT (yt^2) SETTINGS
+#------------------------------------------------
+# Finite part of the Wilson coefficient of the effective Hgg operator:
+#     cggh = aS*(1 + cgghfin)/(12 pi)
+# cgghfin = 0                 -> LO Wilson coefficient (default)
+# cgghfin = 11/4 * aS/pi      -> NLO Wilson coefficient
+# The O(aS) piece enters at the same order as the NLO QCD corrections
+# computed here, so switch it on for a consistent NLO HEFT prediction.
+#cgghfin 0.104d0   ! 11/4 * 0.119/pi
+
+# Recola: perturbative order bookkeeping. 0 = NLO QCD (what we want).
+qed_qcd 0
+doublefsr 0
+
+#bornonly 0        ! FULL NLO: Born + virtual + real
+#LOevents 0
+                  ! bornonly alone, skips the radiation generation
+
+#------------------------------------------------
+#   Generation cuts
+#------------------------------------------------
+bornktmin        0d0       ! no generation cut, for the MG5 comparison
+
+
+#------------------------------------------------
+#   Analysis cuts
+#------------------------------------------------
+
+
+#------------------------------------------------
+#   Jet definition
+#------------------------------------------------
+
+
+#---------------------------------------------------
+#   POWHEG PARAMETERS: Monte Carlo Integration 
+#---------------------------------------------------
+#   Parameters to allow or not the use of stored data
+use-old-grid        0     ! if 1 use old grid if file pwggrids.dat is present (<> 1 regenerate)
+#   General MC Integration settings
+ncall1 10000
+itmx1 2
+ncall2 20000
+itmx2 2
+foldcsi             1     ! number of folds on csi integration
+foldy               1     ! number of folds on  y  integration
+foldphi             1     ! number of folds on phi integration
+testplots 0
+
+
+#-----------------------------------------------------
+#   POWHEG PARAMETERS: Upper bound  evaluation
+#-----------------------------------------------------
+use-old-ubound      0    ! if 1 use norm of upper bounding function stored in pwgubound.dat, if present; <> 1 regenerate
+nubound 100
+storemintupb        1    ! Improve upper bounding computation
+xupbound          2d0    ! increase upper bound for radiation generation		    
+mintupbratlim     1d3
+#compress_upb        1
+ubexcess_correct    1
+
+
+#---------------------------------------------------
+#   POWHEG PARAMETERS: Event generation
+#---------------------------------------------------
+numevts            0    ! integration only for this first test
+#compress_lhe        1
+#   To correct for UB violations detected during stage 4
+#btildeviol         1
+!corr_btilde      XXX
+!corr_remnant     XXX
+clobberlhe       1
+
+#------------------------------------------------
+#   PARTON SHOWER PARAMETERS
+#------------------------------------------------
+#   Settings for shower with pythia8
+py8tune       21   ! (default 14) tune for pythia8 (14 -> Monash2013 tune)
+nohad          1   ! (default 1) if 1 switch off hadronization
+noqed          1
+nompi          1 
+#changescalup  0   ! (default 0, use scalupveto routines) if 1 use pythia8 internal routines
+
+
+#------------------------------------------------
+#   SCALE VARIATION & REWEIGHTING
+#------------------------------------------------
+renscfact      1d0          ! (default 1d0) ren scale factor: muren  = muref * renscfact
+facscfact      1d0   	    ! (default 1d0) fac scale factor: mufact = muref * facscfact
+storeinfo_rwgt 1   	    ! store info to allow for reweighting
+
+rwl_file '-'
+<initrwgt>
+<weightgroup name='First-Weights'>
+<weight id='11'> renscfact=1.0 facscfact=1.0 </weight>
+<weight id='12'> renscfact=1.0 facscfact=2.0 </weight>
+<weight id='21'> renscfact=2.0 facscfact=1.0 </weight>
+<weight id='22'> renscfact=2.0 facscfact=2.0 </weight>
+<weight id='1H'> renscfact=1.0 facscfact=0.5 </weight>
+<weight id='H1'> renscfact=0.5 facscfact=1.0 </weight>
+<weight id='HH'> renscfact=0.5 facscfact=0.5 </weight>
+</initrwgt>
+
+
+#---------------------------------------------------
+#   Soft/Collinear limit TESTS
+#---------------------------------------------------
+#    Check soft/coll limits -> Just for debugging
+verytinypars      0         ! tiny values of 1d-10 for parameters controlling how close we get
+#		     	    ! to soft/coll limits -> values used throughout the program
+colltest          0
+softtest          0
+#tinyForLims      1d-10     ! Set these parameters to tiny values only for soft/coll limit checks
+
+
+#------------------------------------------------
+#   BORN/REMNANT SUPPRESSION
+#------------------------------------------------
+#bornsuppfact 30  ! (default 1), If 1 the Born suppression factor is included.
+#                ! Weighted events are generated. If 0 no suppression
+#                ! factor is included, and events are unweighted.
+withdamp      1  ! Split real amplitude into a singular and remnant contribution
+#bornzerodamp  1
+
+
+#------------------------------------------------
+#   OPTIMIZATION OPTIONS
+#------------------------------------------------
+smartsig      1   ! (default 1)
+fastbtlbound  1
+
+
+#------------------------------------------------
+#   OPTIONS TO CATCH INSTABILITIES
+#------------------------------------------------
+check_bad_st1 1  ! (default 0) if 1, takes care of removing bad grids during stage 1
+check_bad_st2 1  ! (default 0) if 1, takes care of removing bad grids during stage 2
+
+
+#------------------------------------------------
+#   PARALLEL RUNS
+#------------------------------------------------
+#   The following is for parallel runs (see manual in Z2jet/Docs/)
+#manyseeds           1
+#parallelstage       3
+#xgriditeration      3
+#maxseeds         5000
+
+#------------------------------------------------
+# NOTE (sep8-borntest)
+#------------------------------------------------
+# bornonly 1
+# The PDF is CT18NLO (14400) simply because it is one of the four sets
+# installed in ~/Packages/lhapdf-install/share/LHAPDF. It is a 5-flavour
+# set, so alphas runs with nf=5 while the matrix elements are 4FS with
+# a massive b. Fine for checking that the Born is non-zero and stable;
+# NOT the right set for a physics number -- use an nf=4 PDF for that.
+#
+# runningscales 0 : MANDATORY here. The Recola HEFT model file does not
+# support qcd_rescaling, so alpha_s cannot be changed after Recola has
+# generated the processes; it is frozen at recola_muren below and the
+# POWHEG scale must be the same fixed value.
+recola_muren  67.42d0   ! (mH + 2 mb)/2 with mH=125, mb=4.92
+recola_alphas 1.0d0
+tmass 172.5d0     ! as in 2307.09992
+wilsonlog 1
+btlscalereal 1    ! use the REAL kinematics for the real contribution,
+                  ! so HT includes the emitted parton (eq.3 of 2307.09992)
