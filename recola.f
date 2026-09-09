@@ -264,7 +264,6 @@ c$$$      call set_light_fermions_rcl(1d-3)
       include 'pwhg_flst.h'
       include 'pwhg_flg.h'
       include 'pwhg_res.h'
-      include 'pwhg_dpa.h'
       integer i,k,j
       character*100 proc
 c     is_fs is filled by getisfsparticles both for the Born and for the
@@ -459,17 +458,8 @@ c     uninitialised otherwise; bbH_yt2 has res_powst=4.
       do k=1,nprborn_loop
 
 
-            if(dpa_flagtt.eq.1) then
-               call flav_to_string_res(bflav_clean(:nlegbornexternal,k),proc)
-               print*, '**index= ', k+shift, ':', proc
-               if(k.eq.1) then
-                  call set_resonant_particle_rcl('t')
-                  call set_resonant_particle_rcl('t~')
-               endif
-            else
-               call flav_to_string(bflav_clean(:nlegbornexternal,k),proc)
-               print*, '**index=', k+shift, ':', proc
-            endif
+            call flav_to_string(bflav_clean(:nlegbornexternal,k),proc)
+            print*, '**index=', k+shift, ':', proc
          
          !call flav_to_string(bflav_clean(:nlegbornexternal,k),proc)
          processes(k+shift)%i_mast=k+shift
@@ -516,13 +506,8 @@ c     uninitialised otherwise; bbH_yt2 has res_powst=4.
 
       do k=1,nprreal
 
-         if(dpa_flagtt.eq.1) then
-               call flav_to_string_res(rflav_clean(:nlegrealexternal,k),proc)
-               print*, '**index=', k+shift, ':', proc
-         else
-               call flav_to_string(rflav_clean(:nlegrealexternal,k),proc)
-               print*, '**index=', k+shift, ':', proc
-         endif
+         call flav_to_string(rflav_clean(:nlegrealexternal,k),proc)
+         print*, '**index=', k+shift, ':', proc
           
          
  !        call flav_to_string(rflav_clean(:nlegrealexternal,k),proc)
@@ -1022,142 +1007,6 @@ c     Higgs boson: needed by bbH_yt2, absent from the bb4l original
 
 
       
-      subroutine flav_to_string_res(flav_ordered,proc)
-      implicit none
-      include "pwhg_dpa.h"
-      integer, intent(in):: flav_ordered(:)
-      character,intent(inout):: proc(100)
-      character :: onshellproc(100)
-      character(len=30) :: parenthstring
-      integer i,fl,l,ip,j
-      logical flag
-
-      ! The flavours of final state partons should
-      ! be ordered with a given convention (to account
-      ! for final state particle swapping). They are
-      ! passed already ordered in decreasing order of flav
-
-      proc=''
-      l=0
-      do i=1,sizeof(flav_ordered)/4
-         l=l+1
-         fl=abs(flav_ordered(i))
-         SELECT CASE (fl)
-         CASE (1)
-            proc(l)='d'
-         CASE (2)
-            proc(l)='u'
-         CASE (3)
-            proc(l)='s'
-         CASE (4)
-            proc(l)='c'
-         CASE (5)
-            proc(l)='b'
-         CASE (6)
-            proc(l)='t'
-         CASE (22)
-            proc(l)='A'
-         CASE (23)
-            proc(l)='Z'
-         CASE (24)
-            proc(l)='W'
-         CASE (25)
-c     Higgs boson: needed by bbH_yt2, absent from the bb4l original
-            proc(l)='H'
-         CASE (0)
-            proc(l)='g'            
-         CASE (11)
-            proc(l)='e'            
-         CASE (12)
-            proc(l:l+3)=(/ 'n','u','_','e'/)
-            l=l+3
-         CASE (13)
-            proc(l:l+1)=(/ 'm','u'/)
-            l=l+1
-         CASE (14)
-            proc(l:l+4)=(/ 'n','u','_','m','u'/)
-            l=l+4
-         CASE (15)
-            proc(l:l+2)=(/ 't','a','u'/)
-            l=l+2
-         CASE (16)
-            proc(l:l+5)=(/ 'n','u','_','t','a','u'/)
-            l=l+5
-         CASE DEFAULT
-            WRITE(*,*)  "Hmmmm, I don't know ",fl
-            stop
-         END SELECT
-         if( (abs(flav_ordered(i))<=6 .or. abs(flav_ordered(i))==12 
-     &        .or. abs(flav_ordered(i))== 14 .or. abs(flav_ordered(i))==16 )
-     &        .and. flav_ordered(i)<0) then
-            l=l+1
-            proc(l)='~'
-         else if(abs(flav_ordered(i))==11.or. abs(flav_ordered(i))==13 
-     &           .or.abs(flav_ordered(i))==15 ) then
-            l=l+1
-            if(flav_ordered(i).gt.0) then
-               proc(l)='-'
-            else
-               proc(l)='+'
-            endif
-         endif
-         if(abs(flav_ordered(i))==24) then
-            l=l+1
-            if(flav_ordered(i).lt.0) then
-               proc(l)='-'
-            else
-               proc(l)='+'
-            endif
-         endif
-         l=l+1
-         proc(l)=' '
-         if(i==2)then 
-            proc(l+1)='-'
-            proc(l+2)='>'
-            proc(l+3)=' '
-            l=l+3
-         endif
-
-      enddo
-      
-      onshellproc = ''
-      l=0
-      flag=.true.
-      do while(flag)
-         l=l+1
-         onshellproc(l) = proc(l)
-         if(proc(l).eq.'>') then
-            l=l+1
-            onshellproc(l) = ' '
-            flag=.false.
-         endif
-      enddo
-      parenthstring='t(b mu+ nu_mu) t~(b~ e- nu_e~)'
-      do i=1, len(parenthstring)
-         onshellproc(l+i) = parenthstring(i:i)
-      enddo
-      l=l+i
-
-      if(size(flav_ordered).eq.9) then !add the jet
-         j=1
-         flag=.true.
-         do while(flag)
-c            print*, 'j= ', j
-c            print*, 'proc(j,j+1,j+2,j+3,j+4)', proc(j), proc(j+1), proc(j+2), proc(j+3), proc(j+4) 
-            if(proc(j).eq.'n' .and. proc(j+1).eq.'u' .and. proc(j+2).eq.'_' .and. proc(j+3).eq.'m' .and. proc(j+4).eq.'u') then
-                onshellproc(l+1)=proc(j+6)
-                onshellproc(l+2)=proc(j+7)
-                flag=.false.
-             endif
-             j=j+1
-         enddo
-      endif
-      
-      proc=onshellproc
-      
-      end subroutine flav_to_string_res
-
-
       subroutine flav_order(flav,flav_ordered)
       implicit none
       integer, intent(in):: flav(:)
@@ -1267,7 +1116,6 @@ c      call sort(flav_ordered(ip:sizeof(flav)/4))
       include 'pwhg_math.h'      
       include 'nlegborn.h'
       include 'pwhg_res.h'
-      include 'pwhg_dpa.h'
       integer, parameter :: nlegs=nlegbornexternal      
       double precision,intent(in) :: p(:,:)
       double precision  :: p_rcl(0:3,nlegs)
@@ -1310,11 +1158,7 @@ c      call sort(flav_ordered(ip:sizeof(flav)/4))
          call set_alphas_rcl(st_alpha,dsqrt(st_muren2),st_nlight)
       endif
       
-      if(dpa_flagtt.eq.1) then
-         call remap_momenta_dpa(i_mast, bflav, p, p_rcl)
-      else
-         call remap_momenta(i_mast, bflav, p, p_rcl)
-      endif
+      call remap_momenta(i_mast, bflav, p, p_rcl)
 
       
       call compute_process_rcl(i_mast,p_rcl(0:3, 1 : (nlegs-1 + 1 - uub_st - uub_ew) ),'LO')
@@ -1427,7 +1271,6 @@ c     exact running-alpha_s restoration (see recola_asfact)
       include 'nlegborn.h'
       include 'pwhg_res.h'
       include 'pwhg_em.h'
-      include 'pwhg_dpa.h'
       integer, parameter :: nlegs=nlegbornexternal      
       double precision,intent(in) :: p(:,:)
       double precision p_rcl(0:3,1:nlegs)
@@ -1485,11 +1328,7 @@ c     must track muR together with muUV/muIR.
 
 
 
-      if(dpa_flagtt .eq. 1) then
-         call remap_momenta_dpa(i_mast, vflav, p, p_rcl)
-      else
-         call remap_momenta(i_mast, vflav, p, p_rcl)
-      endif
+      call remap_momenta(i_mast, vflav, p, p_rcl)
 
       virtual=0d0
       
@@ -1559,7 +1398,6 @@ c     wilsonlog 0 switches it off.
       include 'nlegborn.h'
       include 'pwhg_res.h'
       include 'pwhg_em.h'
-      include 'pwhg_dpa.h'
       integer, parameter :: nlegs=nlegrealexternal      
       double precision,intent(in) :: p(0:3,nlegs)
       double precision p_rcl(0:3,nlegs)
@@ -1577,11 +1415,7 @@ c     wilsonlog 0 switches it off.
          call set_alphas_rcl(st_alpha,dsqrt(st_muren2),st_nlight)
       endif  
 
-      if(dpa_flagtt.eq.1) then
-         call remap_momenta_dpa(i_mast, rflav, p, p_rcl)
-      else
-         call remap_momenta(i_mast, rflav, p, p_rcl)
-      endif
+      call remap_momenta(i_mast, rflav, p, p_rcl)
       
       call compute_process_rcl(i_mast,p_rcl,'LO')
       amp2=0d0
@@ -1859,41 +1693,6 @@ c               color(:,i)=(/ 0, 0 /)
       enddo
 
       end subroutine remap_momenta
-
-      subroutine remap_momenta_dpa(i_mast, flav, p, p_rcl)
-      implicit none
-      integer, parameter ::maxlength=40
-      integer i, j, ip, i_mast
-      integer, intent(in) :: flav(:)
-      integer flav_tmp(maxlength)
-      double precision, intent(in) :: p(:,:)
-      double precision, intent(inout) :: p_rcl(:,:)
-
-      if(size(flav).gt.maxlength)then
-         write(*,*) " In recola interface, remap_momenta: "
-         write(*,*) " flavour string length is too long!!!"
-         stop
-      endif
-
-!In DPA we put some parentheis therefore the order of the
-!final-state particles is different to the one in PWG
-
-      p_rcl(:,1)=p(:,1) !parton1
-      p_rcl(:,2)=p(:,2) !parton2
-      p_rcl(:,3)=p(:,3) !b
-      p_rcl(:,4)=p(:,7) !mu
-      p_rcl(:,5)=p(:,8) !nu_mu
-      p_rcl(:,6)=p(:,4) !b~
-      p_rcl(:,7)=p(:,5) !e
-      p_rcl(:,8)=p(:,6) !nu_e
-
-      if(size(flav).eq.9) then
-         p_rcl(:,9)=p(:,9)      !jet
-c         print*, 'flav(9)= ', flav(9)
-c         print*, 'p(9)= ', p_rcl(:,9)
-      endif
-      
-      end subroutine remap_momenta_dpa
 
       
 

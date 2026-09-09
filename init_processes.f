@@ -18,18 +18,12 @@ c     Amplitudes are provided by Recola2 (model file HEFT).
       include 'pwhg_res.h'
       include "pwhg_flg.h"
       include "PhysPars.h"
-c     pwhg_dpa.h is pulled in by the (bb4l-derived) recola.f. The
-c     double-pole approximation is meaningless for this process, which
-c     has no resonances, so the flag is explicitly switched off below.
-      include 'pwhg_dpa.h'
       integer i, int(maxprocreal), ickm
       integer nmaxres_real,nmaxres_born,dim_integ
       real * 8 powheginput
       external powheginput
       character(len=100) :: model_rcl
       common/physicsmodel/model_rcl
-
-      dpa_flagtt = 0
 
       do i=1,maxprocreal
          int(i)=i
