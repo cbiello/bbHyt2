@@ -80,16 +80,14 @@ bornktmin        0d0       ! no generation cut, for the MG5 comparison
 #   POWHEG PARAMETERS: Monte Carlo Integration 
 #---------------------------------------------------
 #   Parameters to allow or not the use of stored data
-use-old-grid        0     ! if 1 use old grid if file pwggrids.dat is present (<> 1 regenerate)
 #   General MC Integration settings
-ncall1 20
-itmx1 1
-ncall2 20
-itmx2 1
+ncall1 5000
+itmx1 2
+ncall2 10000
+itmx2 2
 foldcsi             1     ! number of folds on csi integration
 foldy               1     ! number of folds on  y  integration
 foldphi             1     ! number of folds on phi integration
-testplots 0
 
 
 #-----------------------------------------------------
@@ -107,7 +105,7 @@ ubexcess_correct    1
 #---------------------------------------------------
 #   POWHEG PARAMETERS: Event generation
 #---------------------------------------------------
-numevts            0    ! integration only for this first test
+numevts 20000
 #compress_lhe        1
 #   To correct for UB violations detected during stage 4
 #btildeviol         1
@@ -186,8 +184,6 @@ check_bad_st2 1  ! (default 0) if 1, takes care of removing bad grids during sta
 #------------------------------------------------
 #   The following is for parallel runs (see manual in Z2jet/Docs/)
 #manyseeds           1
-#parallelstage       3
-#xgriditeration      3
 #maxseeds         5000
 
 #------------------------------------------------
@@ -211,32 +207,19 @@ wilsonlog 1
 btlscalereal 1    ! use the REAL kinematics for the real contribution,
                   ! so HT includes the emitted parton (eq.3 of 2307.09992)
 
-#etascfact        1   ! eta in Q = eta*sqrt(Q^2), as in ttH_NLO
-
 !------------------------------------------------------------------
-! Fixed massless reference point (virtual.f, ColombaPS_virtual).
-! Set MAapprox 0 above when using this.
+! M1M0 run: the VIRTUAL sits in place of the Born (virtinborn), so the
+! events generated here are M1M0 events. bornonly + LOevents, no
+! radiation. MAapprox 0 = exact massive virtual, 1 = massified.
 !------------------------------------------------------------------
-! n_f = 5 is hard-wired for this check.
+virtinborn 1
+bornonly   1
+LOevents   1
+MAapprox   0
+#etascfact 1        ! massification scale Q = etascfact*sqrt(s_bbH)
 
-!------------------------------------------------------------------
-! Both checks below stop the run after one phase-space point, so the
-! grid settings above are at the bare minimum. Enable ONE of them.
-!------------------------------------------------------------------
-
-! (a) one-loop massification check, virtual.f / MAapprox_virtual
-#MAapprox          1   ! massless-b amplitude on a mapped POWHEG point
-#MAapprox_mapping  1   ! 1 = MATRIX maps (default), 0 = MiNNLOPS maps
-#MAapprox_chan     0   ! 0 = gg, 1 = q qbar, absent = first point
-#MAapprox_scale    1   ! 1 = evaluate at Q (default), 0 = at POWHEG muR
-#MAapprox_nf       5   ! n_f in the a_s renormalisation (default 5)
-#etascfact         1   ! eta in Q = eta*sqrt(Q^2), as in ttH_NLO
-
-! (b) fixed massless reference point, virtual.f / ColombaPS_virtual
-!     n_f = 5 is hard-wired.
-ColombaPS          1   ! Born and virtual on the hard-coded point
-ColombaPS_chan     0   ! 0 = gg (default), 1 = d d~
-#ColombaPS_mtop    173.2         ! top mass (default)
-#ColombaPS_vev     246.220569073 ! Higgs vev (default)
-#ColombaPS_muren   173.2         ! renormalisation scale (default m_t)
-#ColombaPS_alphas  0.118         ! a_s at that scale (default)
+manyseeds  1
+parallelstage 2
+xgriditeration 2
+testplots 1
+use-old-grid 1

@@ -1,0 +1,64 @@
+High-energy test of the massification   M1^(m) = F1 * M0^(0) + M1^(0)
+====================================================================
+pyrecola, HEFT 2.2.4.  Massive point: ColombaPS momenta with legs 4,5
+given a mass m at fixed p4+p5.  Massless point: ColombaPS itself.
+Loop content is kept IDENTICAL on the two sides (massive side
+g g -> H b b~ with MB = m, massless side g g -> H s s~ with MS = 0 and
+MB = m still in the loops), so the comparison tests the EXTERNAL-leg
+massification only.
+
+Result, with the ttH_NLO form 2*F1 = C_F ( L^2 + L + 4 + pi^2/6 ):
+
+     m_b      residual gg        residual qqb      (L = log(mu^2/m^2))
+    4.920     -2.19668211        -2.18111994
+    1.000     -2.19376818        -2.19254626
+    0.200     -2.19324725        -2.19324590
+    0.050     -2.19324554        -2.19324545
+    0.010     -2.19324543        -2.19324542
+
+     -C_F*pi^2/6 = -2.19324542
+
+The residual is a universal constant, -C_F pi^2/6, to 8 digits.  It is
+independent of the channel, of mu (300...3000), of sqrt(s)
+(500...3000) and of the shape of the phase-space point (checked by
+swapping b <-> bbar at fixed shat).  So the massification is exact and
+the whole m dependence (L^2 and L) is reproduced; only the pi^2 term of
+F1 is convention dependent:
+
+   delta_IR = delta_IR2 = 0         ->  2*F1 = C_F ( L^2 + L + 4 )
+   delta_IR = 0, delta_IR2 = zeta2  ->  2*F1 = C_F ( L^2 + L + 4 + pi^2/3 )
+   (BLHA, which is what recola_virtual returns)
+
+verified to 1e-8 by driver8.py.  The two differ by
+(c2_massive - c2_massless)*zeta2 = 2 C_F zeta2, with c2 = -sum_i C_i
+measured as -2C_i (massive) and -2C_i-2C_F (massless).
+
+ttH_NLO uses c_pi = 1 because it converts the massless virtual to the
+Neubert scheme by adding (C_i+C_F) pi^2/6 * B0; we take the massless
+virtual straight from Recola, hence c_pi = 2.
+
+NOTE: an earlier version of this test had a bug in the boost building
+the massive point (momentum conservation violated by ~100 GeV); it
+produced a residual that looked channel-, mu- and shape-dependent.
+driver.py now checks momentum conservation.
+
+
+Production setup (what MAapprox actually runs)
+----------------------------------------------
+There the massless side IS the same process with MB = 0, so the b is a
+massless flavour in the loops (n_f = 5), while the exact run has it
+decoupled (dZgs_QCD2 = Nf4).  Writing the relation the ttH_NLO way,
+
+   V^(m)_BLHA/B = 2*F1_ttH + [ V^(0)_BLHA/B + C_F pi^2/6 ] + kappa * L
+
+with F1_ttH the ttH_NLO massif_factors (pi^2/6 inside) and the square
+bracket the Neubert-scheme massless input, driver9.py gives
+
+   g g -> H b b~ :  kappa = 0.666667 = 2/3 , constant = -7e-6
+   u u~-> H b b~ :  kappa = 1.333333 = 4/3 , constant = -2e-6
+
+at mu = 1000 and 3000, i.e. the constant vanishes and only the
+loop-content logarithm is left.  massif_factors therefore carries
+  - 2*lmt/3  universally  (b light in the loops of the massless side)
+and another - 2*lmt/3 for a quark-induced initial state, the latter
+being exactly the term ttH_NLO already has for fullflav != 0.

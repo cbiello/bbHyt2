@@ -1,0 +1,26 @@
+# build
+obj-*/
+pwhg_main
+*.o
+*.mod
+
+# run output (keep the benchmark card, seeds and the empty output_cll)
+**/output_cll/*
+!**/output_cll/.gitkeep
+pwg*.dat
+!pwgseeds.dat
+pwg*.lhe*
+*.top
+run*.log
+*_debug.log
+FlavRegList
+sigborn_equiv*
+sigreal*_equiv*
+sigvirtual_equiv*
+lhef_analysis
+*~
+*.orig
+fort.*
+driver.log
+merge.log
+lhefana-*.log

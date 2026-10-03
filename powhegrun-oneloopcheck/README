@@ -1,0 +1,46 @@
+One-loop massification check (MAapprox)
+=======================================
+
+Runs the diagnostic in ../virtual.f (subroutine MAapprox_virtual): the
+massive-b Born point is mapped onto its massless image with the ttH
+mappings, Recola is restarted with m_b = 0, and the one-loop amplitude
+is evaluated and printed there. The run STOPS after the first selected
+point -- Recola fixes the masses at process generation, so the massless
+processes replace the massive ones.
+
+The massless amplitude is renormalised at the scale used in ttH_NLO,
+    Q = etascfact * sqrt((p_H + p_b + p_bbar)^2)
+i.e. the invariant mass of the massless bbH system, and evaluated with
+a_s(Q). As in the production run, Recola is given aS = 1 (its power
+coefficients are normalised to that) and a_s(Q) is restored by hand.
+
+Same physics setup as ../powhegrun-benchmark2307.09992 (2307.09992),
+with the integration grids cut to the minimum since only one point is
+ever used.
+
+Run:
+    ../pwhg_main   (answer 1, or  echo 1 | ../pwhg_main)
+
+Keys (bottom of powheg.input):
+    MAapprox          1 to activate
+    MAapprox_mapping  1 MATRIX maps (default), 0 MiNNLOPS maps
+    MAapprox_chan     0 gg, 1 q qbar, absent = whatever comes first
+    MAapprox_nf       n_f in the a_s renormalisation (default 5)
+    MAapprox_scale    1 evaluate at Q (default), 0 at POWHEG's muR
+    etascfact         eta in Q = eta*sqrt(Q^2) (default 1, as in ttH)
+
+The same file also has ColombaPS, which evaluates Born and virtual on a
+fixed massless reference point (sqrt(s) = 1000 GeV) instead of a mapped
+one, with m_t = mu_R = 173.2, vev = 246.220569073, a_s = 0.118 and
+n_f = 5. aEW is derived from the vev and the W/Z/H/t widths are zeroed
+so that vev comes out real. Enable ONE of the two blocks at the bottom
+of powheg.input.
+
+ColombaPS runs from init_processes, before the production processes are
+generated. reset_recola_rcl does NOT fully restore the model state, so
+re-using a Recola session that has already generated processes shifts
+the amplitude by a few per mille -- which is why MAapprox, that has no
+choice but to reset, is a qualitative check only.
+
+Cross-check: ColombaPS reproduces ../python-CB/recola_Hbb1.py (pyrecola,
+same point) to 4e-12 relative.

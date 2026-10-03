@@ -7,6 +7,7 @@ c     (bbH4FS) is needed here.
       implicit none
       include 'nlegborn.h'
       include 'pwhg_st.h'
+      include 'pwhg_math.h'
 
       integer, parameter :: nlegs=nlegbornexternal
       real * 8, intent(in)  :: p(0:3,nlegs)
@@ -14,6 +15,28 @@ c     (bbH4FS) is needed here.
       real * 8, intent(out) :: born
       real * 8, intent(out) :: bornjk(nlegs,nlegs)
       real * 8, intent(out) :: bmunu(0:3,0:3,nlegs)
+      real * 8 powheginput
+      external powheginput
+
+c     virtinborn 1 : put the VIRTUAL in place of the Born, so that a
+c     stage 1-4 run integrates the one-loop contribution alone. The
+c     virtual that comes back is the exact one (MAapprox 0) or the
+c     massified one (MAapprox 1); running the two jobs and comparing
+c     them, and varying etascfact inside MAapprox, is what the
+c     uncertainty estimate is built from.
+      if(powheginput("#virtinborn").eq.1) then
+         call setvirtual(p,bflav,born)
+         born = born*st_alpha/(2d0*pi)
+c        MAdebug 1 : dump pT_b, pT_bbar, m_bb and the weight to fort.77
+         if(powheginput("#MAdebug").eq.1) write(77,'(2i4,4e16.8)')
+     $        bflav(1),bflav(2),dsqrt(p(1,4)**2+p(2,4)**2),
+     $        dsqrt(p(1,5)**2+p(2,5)**2),
+     $        dsqrt((p(0,4)+p(0,5))**2-(p(1,4)+p(1,5))**2
+     $        -(p(2,4)+p(2,5))**2-(p(3,4)+p(3,5))**2),born
+         bornjk = 0d0
+         bmunu  = 0d0
+         return
+      endif
 
       call recola_born(p,bflav,born,bornjk,bmunu)
 

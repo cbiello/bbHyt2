@@ -18,6 +18,7 @@ c     Amplitudes are provided by Recola2 (model file HEFT).
       include 'pwhg_res.h'
       include "pwhg_flg.h"
       include "PhysPars.h"
+      include 'pwhg_MAeta.h'
       integer i, int(maxprocreal), ickm
       integer nmaxres_real,nmaxres_born,dim_integ
       real * 8 powheginput
@@ -28,6 +29,18 @@ c     Amplitudes are provided by Recola2 (model file HEFT).
       do i=1,maxprocreal
          int(i)=i
       enddo
+
+c     MAapprox massification scale factor (reweightable, key etascfact)
+      ma_eta = powheginput("#etascfact")
+      if(ma_eta.le.0d0) ma_eta = 1d0
+c     massless-mapping parameter (reweightable, key lambdascvar)
+      ma_lam = powheginput("#lambdascvar")
+      if(ma_lam.lt.-1d5) ma_lam = 1d0
+      if(ma_lam.le.0d0) then
+         write(*,*) ' lambdascvar must be > 0 (IR safety of the',
+     $        ' massless amplitude), got ',ma_lam
+         call exit(-1)
+      endif
 
       ickm = 2   !   0,1,2 for general, ckm_cabibbo, ckm_diag
       ckm_diag = .false.
@@ -136,6 +149,9 @@ c     add (-1) for overall azimuthal rotation of the event around the beam axis
       write(*,*) "##########################################"
       write(*,*) "       Initialisation of Recola"
       write(*,*) "##########################################"
+c     ColombaPS 1 : Born and virtual on a fixed massless reference
+c     point. It runs here, before any process is generated, and stops.
+      if(powheginput("#ColombaPS").eq.1) call ColombaPS_virtual
       call recola_init
 c     The HEFT model file reports itself as "SM (QCD) + HEFT", so test
 c     for the substring rather than the leading characters.

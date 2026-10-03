@@ -102,3 +102,39 @@ Validation
   virtual: IR double poles           gg -6.000, qqbar -8/3, to 2e-6
   virtual: UV finiteness             independent of DeltaUV
   full setup vs 2307.09992           LO, NLO agreement
+Massification (MAapprox) and virtinborn
+---------------------------------------
+MAapprox 1 registers, next to the massive processes, the massless image
+of each Born channel, g g / q q~ -> H s s~ (d d~ for an s s~ initial
+state), with MS = 0 and the massive b kept in the loops, so exact and
+approximated amplitudes live in one Recola session. As in
+MiNNLOPS_res/ttH_NLO, setvirtual then
+  1. maps the massive point onto its massless image,
+  2. evaluates at Q = etascfact*sqrt(s_bbH)
+         M1M0(Q) = [ 2*F1 + V0/B0 ] * B_massive
+     (F1 the Mitov-Moch constant, virtual.f massif_factors),
+  3. runs it to muR with the exact one-loop RGE and the poles of the
+     MASSIVE amplitude at Q:
+         V(muR) = V(Q) + c1 L + c2 L^2/2 + n b0 L B ,  L = log(muR^2/Q^2)
+     plus the change of the HEFT Wilson log (wilsonlog).
+
+virtinborn 1 puts the virtual in place of the Born, so a stage 1-4 run
+integrates the one-loop contribution alone; run it once with
+MAapprox 0 (exact) and once with MAapprox 1, and vary etascfact for the
+scale ambiguity of the approximation. Use bornonly 1 + LOevents 1.
+
+Checks against the exact amplitude
+  MAflowcheck 1: exact V(Q) run to muR vs exact V(muR) -- agree to
+     <1e-3 of V (residual linear in L, scaling like m_b^2, origin not
+     identified; independent of the massification).
+  MAdebug 2 (fort.78): massified vs exact on the same point. Ratio
+     1.0000 for pT_b > 80 GeV, 0.997-1.0007 for 20-80 GeV, a few % low
+     below 10 GeV (m_b/pT power corrections).
+
+eta variation: etascfact is a reweighting key (rwl_setup_param_weights_user.f,
+common pwhg_MAeta.h), as in ttH_NLO. Stage 4 adds e.g.
+  <weight id='11eta2'> renscfact=1.0 facscfact=1.0 etascfact=2.0 </weight>
+  <weight id='11etaH'> renscfact=1.0 facscfact=1.0 etascfact=0.5 </weight>
+The exact virtual is eta independent.
+
+See ma-test/RESULT.txt for the pointwise validation of F1.

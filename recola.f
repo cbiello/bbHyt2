@@ -30,6 +30,12 @@ c     and cannot be rescaled a posteriori. With such a model file a_s
 c     must be fixed BEFORE the processes are generated, i.e. the run
 c     is restricted to a fixed renormalisation scale.
       logical, save :: als_rescaling = .true.
+c     MAapprox 1: next to the massive processes, each Born flavour
+c     structure is registered once more with b b~ -> s s~ (MS = 0, MB
+c     kept in the loops). These are the massless images used by the
+c     massification, so exact and approximated live in ONE session.
+      logical, save :: ma_simage = .false.
+      integer, save :: k0_simage = 0, npr_simage = 0
 c     Value alpha_s was frozen to (used only when als_rescaling false)
       double precision, save :: als_frozen = -1d0
       
@@ -104,7 +110,8 @@ c     on the ATGC model name, since HEFT has only QCD and QED orders.
          if (ph_Zwidth/= 0)call set_parameter_rcl('WH', dcmplx(ph_Hwidth))
          if (ph_tmass/= 0)call set_parameter_rcl('MT', dcmplx(ph_tmass))
          if (ph_twidth/= 0)call set_parameter_rcl('WT', dcmplx(ph_twidth))
-         if (ph_bmass/= 0)call set_parameter_rcl('MB', dcmplx(ph_bmass))
+         ma_simage = (powheginput("#MAapprox").eq.1d0)
+         if (ph_bmass/= 0) call set_parameter_rcl('MB', dcmplx(ph_bmass))
          if (ph_bwidth/= 0)call set_parameter_rcl('WB', dcmplx(ph_bwidth))
          if (ph_cmass/= 0)call set_parameter_rcl('MC', dcmplx(ph_cmass))
          if (ph_cwidth/= 0)call set_parameter_rcl('WC', dcmplx(ph_cwidth))
@@ -285,6 +292,7 @@ c     harmless without bounds checking, caught here by -fbounds-check).
       external powheginput
       common/pertord/qed_qcd_rcl
       integer uub_st, uub_ew
+      integer iqim
      
  
       qed_qcd_rcl=int(powheginput("#qed_qcd"))
@@ -404,10 +412,12 @@ c     harmless without bounds checking, caught here by -fbounds-check).
          enddo         
       endif
 
+      npr_simage = 0
+      if(ma_simage) npr_simage = nprborn
       if(qed_qcd_rcl.eq.2) then
-         allocate(processes(npruborn+nprborn*2+nprreal))
+         allocate(processes(npruborn+nprborn*2+nprreal+npr_simage))
       else
-         allocate(processes(npruborn+nprborn+nprreal))
+         allocate(processes(npruborn+nprborn+nprreal+npr_simage))
       endif
 
       if(flg_minlo.or.flg_minnlo)then
@@ -544,6 +554,30 @@ c     uninitialised otherwise; bbH_yt2 has res_powst=4.
          endif
       enddo
 
+
+      shift=shift+nprreal
+      k0_simage=shift+1
+      do k=1,npr_simage
+         processes(k+shift)%i_mast=k+shift
+         allocate(processes(k+shift)%flav(nlegbornexternal))
+         processes(k+shift)%flav=bflav_clean(:nlegbornexternal,k)
+c        image flavour s, or d when s is in the initial state (an
+c        s s~ -> H s s~ image would add identical-quark diagrams)
+         iqim = 3
+         if(abs(processes(k+shift)%flav(1)).eq.3) iqim = 1
+         where(abs(processes(k+shift)%flav).eq.5)
+            processes(k+shift)%flav=sign(iqim,processes(k+shift)%flav)
+         end where
+         call flav_to_string(processes(k+shift)%flav,proc)
+         print*, '**index=', k+shift, ':', proc, ' (MAapprox image)'
+         call define_process_rcl(k+shift,proc(:),'NLO')
+         call unselect_all_powers_BornAmpl_rcl(k+shift)
+         call unselect_all_powers_LoopAmpl_rcl(k+shift)
+         call select_power_BornAmpl_rcl(k+shift, 'QCD', res_powst)
+         call select_power_BornAmpl_rcl(k+shift, 'QED', res_powew)
+         call select_power_LoopAmpl_rcl(k+shift, 'QCD', res_powst+2)
+         call select_power_LoopAmpl_rcl(k+shift, 'QED', res_powew)
+      enddo
 
       if(.not.als_rescaling) call recola_freeze_alphas
 
@@ -1098,6 +1132,17 @@ c      call sort(flav_ordered(ip:sizeof(flav)/4))
          endif
       enddo
 
+c     MAapprox massless images (b -> s)
+      if(.not.found .and. size(flav)==nlegbornexternal)then
+         do k=k0_simage, k0_simage+npr_simage-1
+            if(all(processes(k)%flav == flav_ordered))then
+               index=processes(k)%i_mast
+               found=.true.
+               exit
+            endif
+         enddo
+      endif
+
       if(.not.found)then
          write(*,*) "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
          write(*,*) " Error in get_rcl_index: the process  "
@@ -1391,6 +1436,63 @@ c     wilsonlog 0 switches it off.
       endif
 
       end subroutine recola_virtual
+
+
+      subroutine recola_virtual_poles(p,vflav,c1,c2)
+c     IR pole coefficients of the one-loop amplitude at the current
+c     scale st_muren2, in POWHEG units (divided by as/2pi, Born-
+c     dimensionful, same as_s rescaling as recola_virtual):
+c        V = (as/2pi) [ c2/eps^2 + c1/eps + finite ]
+c     Used to run a virtual evaluated at Q to muR (MAapprox):
+c        fin(muR) = fin(Q) + c1(Q) L + c2 L^2/2 ,  L = log(muR^2/Q^2)
+      include 'nlegborn.h'
+      include 'pwhg_st.h'
+      include 'pwhg_res.h'
+      integer, parameter :: nlegs=nlegbornexternal
+      double precision, intent(in) :: p(0:3,nlegs)
+      integer, intent(in) :: vflav(nlegs)
+      double precision, intent(out) :: c1,c2
+      double precision p_rcl(0:3,nlegs),v00,v10,bb
+      integer i_mast,i
+      integer, parameter :: dp = kind (23d0)
+      real(dp), parameter :: pi = 3.141592653589793238462643d0
+
+      i_mast=get_rcl_index(vflav)
+      call remap_momenta(i_mast, vflav, p, p_rcl)
+      if(als_rescaling) then
+         call set_alphas_rcl(st_alpha,dsqrt(st_muren2),st_nlight)
+      endif
+      call set_mu_ir_rcl (dsqrt(st_muren2))
+      call set_mu_uv_rcl (dsqrt(st_muren2))
+      call set_mu_ms_rcl (dsqrt(st_muren2))
+
+      call set_delta_ir_rcl(0d0,0d0)
+      call compute_process_rcl(i_mast,p_rcl,'NLO')
+      call get_squared_amplitude_rcl(i_mast,
+     $     [2*(res_powst+1),2*res_powew],'NLO',v00)
+      call get_squared_amplitude_rcl(i_mast,
+     $     [2*res_powst,2*res_powew],'LO',bb)
+      call set_delta_ir_rcl(1d0,0d0)
+      call compute_process_rcl(i_mast,p_rcl,'NLO')
+      call get_squared_amplitude_rcl(i_mast,
+     $     [2*(res_powst+1),2*res_powew],'NLO',v10)
+c     restore the BLHA convention used for the physics run
+      call set_delta_ir_rcl(0d0,pi**2/6d0)
+
+      c1 = (v10-v00)/(st_alpha/2d0/pi)*recola_asfact(res_powst+1)
+c     the double pole is known: -sum of the Casimirs of the massless
+c     coloured legs times the Born (checked to 2e-6, see README)
+      c2 = 0d0
+      do i=1,nlegs
+         if(vflav(i).eq.0) then
+            c2 = c2 - 3d0
+         elseif(abs(vflav(i)).le.4) then
+            c2 = c2 - 4d0/3d0
+         endif
+      enddo
+      c2 = c2*bb*recola_asfact(res_powst)
+
+      end subroutine recola_virtual_poles
 
       subroutine recola_real(p,rflav,amp2)
       include 'pwhg_st.h'

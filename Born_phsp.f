@@ -104,8 +104,8 @@ c generate Born phase space from resoance information
       logical, save        :: fixedscale,runningscales
 
 
-      logical gscale,hscale,Mscale,HT4scale
-      save gscale, hscale,Mscale,HT4scale
+      logical gscale,hscale,Mscale,HT4scale,mH2scale
+      save gscale, hscale,Mscale,HT4scale,mH2scale
       integer nfs,ileg
       real*8 ptsq,mm,htsum
 
@@ -115,6 +115,7 @@ c generate Born phase space from resoance information
          hscale = .false.
          Mscale = .false.
          HT4scale = .false.
+         mH2scale = .false.
 
          renscfact=powheginput("#renscfact")
          facscfact=powheginput("#facscfact")
@@ -141,6 +142,10 @@ c     NOTE: needs "btlscalereal 1" in powheg.input, otherwise POWHEG
 c     never sets flg_btildepart='r' and the real uses the Born HT.
             runningscales=.true.
             HT4scale = .true.
+         elseif(powheginput('#runningscales').eq.5) then
+c     fixed mur = muf = mH/2
+            runningscales=.false.
+            mH2scale = .true.
          endif   
 
          write(*,*) '*************************************'
@@ -154,6 +159,8 @@ c     never sets flg_btildepart='r' and the real uses the Born HT.
             write(*,*) 'MbbH'
          elseif (HT4scale) then
             write(*,*) 'HT/4 over all final-state particles'
+         elseif (mH2scale) then
+            write(*,*) 'mH/2 (fixed)'
          else
             write(*,*) '(mH+2mb)/2'
          endif   
@@ -176,7 +183,11 @@ c     Fixed-scale mode. Must be assigned on EVERY call: muf/mur are
 c     intent(out) dummies, and setting them only inside "if (ini)"
 c     (as in bbH4FS) leaves them undefined from the second call on.
       if (.not.runningscales) then
-         muf = 0.5d0*(ph_Hmass + 2d0*ph_bmass)
+         if (mH2scale) then
+            muf = 0.5d0*ph_Hmass
+         else
+            muf = 0.5d0*(ph_Hmass + 2d0*ph_bmass)
+         endif
          mur = muf
          return
       endif

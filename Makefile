@@ -88,7 +88,7 @@ endif
 PWD=$(shell pwd)
 WDNAME=$(shell basename $(PWD))
 RESDIR=../
-VPATH=./:./analysis-yb2:$(POWHEG-BOX_tmp):$(RESDIR):$(OBJDIR)
+VPATH=./:./analysis-MA:./analysis-yb2:$(POWHEG-BOX_tmp):$(RESDIR):$(OBJDIR)
 
 INCLUDE0=$(PWD)
 INCLUDE1=$(RESDIR)/include
@@ -132,6 +132,22 @@ ifeq ($(FASTJET_CONFIG),)
 FASTJET_CONFIG=$(HOME)/Packages/fastjet-install/bin/fastjet-config
 endif
 
+#######################################################################
+#  IFNPlugin (fjcontrib) for the IFN b-jet definition of ANALYSIS=MA.
+#  Leave empty to build without it: the -ifn histograms stay empty.
+IFNPLUGIN =
+#######################################################################
+
+ifeq ("$(ANALYSIS)","MA")
+LIBSFASTJET += $(shell $(FASTJET_CONFIG) --libs --plugins ) $(STDCLIB)
+FJCXXFLAGS  += $(shell $(FASTJET_CONFIG) --cxxflags)
+ifneq ($(strip $(IFNPLUGIN)),)
+FJCXXFLAGS  += -I$(IFNPLUGIN) -DHAVE_IFN
+LIBSFASTJET += -L$(IFNPLUGIN) -lIFNPlugin
+endif
+PWHGANAL=pwhg_bookhist-multi.o pwhg_analysis-MA.o
+PWHGANAL+= fastjetfortran.o ifn_stub.o multi_plot.o
+else
 ifeq ("$(ANALYSIS)","MiNNLO")
 ##To include Fastjet configuration uncomment the following lines.                                                                                                                                                    
 #FASTJET_CONFIG=$(shell which fastjet-config)  # set globally above
@@ -205,6 +221,7 @@ FJCXXFLAGS += $(shell $(FASTJET_CONFIG) --cxxflags)
 PWHGANAL=pwhg_bookhist-multi.o pwhg_analysis-PCI.o
 PWHGANAL+=  fastjetfortran.o
 
+endif
 endif
 endif
 endif
