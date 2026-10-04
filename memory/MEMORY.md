@@ -1,0 +1,4 @@
+- [M1M0 massification status](m1m0-massification-status.md) — current state: code, runs, results, NLO+PS stage-4 stall
+- [Massify at Q, then RGE](massification-at-Q-then-rge.md) — user rule: approximation at sqrt(s_bbH), exact RGE flow to muR, check vs exact
+- [lambdascvar mapping](lambdascvar-mapping.md) — massless-map variation, name lambdascvar, lambda>0 for IR safety
+- [bbhytplots repo](bbhytplots-repo.md) — where M1M0 plots go (also bbHyt2/bbhyt2plots); tthplots layout + GMVFNS error bars
