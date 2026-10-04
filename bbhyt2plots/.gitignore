@@ -1,0 +1,6 @@
+# the parent .gitignore drops POWHEG run output (*.top, pwg*.dat, ...);
+# here the merged/rebinned .top files are inputs of the plots: keep them
+!*.top
+oneloop/gnuplot_minnlo/histograms/
+oneloop/make_all-*.log
+__pycache__/
